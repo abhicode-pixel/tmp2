@@ -300,7 +300,7 @@
         <div class="tpm-chat-header" onclick="tpmToggleChat()">
             <div class="tpm-chat-agent">
                 <div class="tpm-avatar">
-                   <span class="tpm-avatar-text">PM</span>
+                   <span class="tpm-avatar-text">TPM</span>
                    <span class="tpm-online-dot"></span>
                 </div>
                 <div class="tpm-chat-info" style="margin-left:12px;">
