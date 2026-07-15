@@ -1,15 +1,17 @@
-// THE PLACID MINDS - LEAD FUNNEL v2.1
+// THE PLACID MINDS - LEAD FUNNEL v2.2
 // Brand-Aligned | Terracotta + Teal | Montserrat Font
 // Premium Design | Simplified Form | 10-Digit Validation
 // Therapist: Dhivyaraksha Pajni | Advanced Cognitive Hypnotic Psychotherapist
-// v2.1 CHANGELOG:
-//   - Fixed mobile modal/chat height being squeezed (dvh units + true scroll-lock w/ position restore)
-//   - Fixed page-jump-to-top bug on modal open/close (body position:fixed now preserves scrollY)
-//   - Mobile exit-intent now triggers on back-gesture / tab-blur / idle-scroll-up (mouseleave never fires on touch)
-//   - Added "converted" cookie so users who already submitted aren't re-prompted
-//   - Added button loading spinner + hardened double-submit guard
-//   - Reduced modal/chat padding & element sizes at small viewport + short-viewport (landscape/keyboard) breakpoints
-//   - iOS safe-area padding for notch devices
+// v2.2 CHANGELOG:
+//   - Redesigned minimized chat FAB: proper icon button (chat-bubble icon) w/ gradient,
+//     soft attention ring pulse, unread badge — no more squashed "TPM" text circle
+//   - Notification card redesigned + restacked directly ABOVE the chat FAB (same corner),
+//     with avatar, title/subtitle, live dot, and a connecting pointer — like a linked pair
+//   - Notification is now clickable and opens the chat widget directly
+//   - Unread badge appears with the notification and clears automatically once chat opens
+//   - Both chat + notification now consistently anchor bottom-left on desktop & mobile
+//   - (carried over from v2.1) dvh-safe modal/chat sizing, true scroll-lock w/ position
+//     restore, mobile-safe exit intent, converted-cookie suppression, iOS safe-area padding
 
 (function () {
     // ─── INJECT STYLES FIRST (prevent FOUC) ───────────────────────────────────
@@ -42,21 +44,41 @@
             overflow: hidden !important;
         }
 
-        /* ── NOTIFICATION ───────────────────────────────────────────────────── */
+        /* ── NOTIFICATION (now a linked card stacked above the chat FAB) ─────── */
         .tpm-notif {
-            position: fixed !important; bottom: 30px !important; right: 30px !important;
-            background: var(--white) !important; padding: 16px 24px !important;
-            border-radius: 60px !important; box-shadow: 0 10px 40px rgba(4,75,80,0.15) !important;
-            display: flex !important; align-items: center !important; gap: 14px !important;
-            z-index: 999998 !important; border-left: 5px solid var(--primary) !important;
-            animation: tpmSlideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) !important; max-width: 350px !important;
+            position: fixed !important; bottom: 112px !important; left: 30px !important;
+            background: var(--white) !important; padding: 14px 18px 14px 14px !important;
+            border-radius: 20px !important; box-shadow: 0 18px 45px rgba(4,75,80,0.2) !important;
+            display: flex !important; align-items: center !important; gap: 12px !important;
+            z-index: 999998 !important;
+            animation: tpmSlideUp 0.55s cubic-bezier(0.23, 1, 0.32, 1) !important;
+            max-width: 300px !important; cursor: pointer !important;
+            border: 1px solid rgba(4,75,80,0.06) !important;
+            transition: transform 0.25s ease, box-shadow 0.25s ease !important;
         }
-        .tpm-live-badge {
-            background: var(--primary); color: #fff; font-size: 9px; font-weight: 800;
-            padding: 4px 10px; border-radius: 6px; letter-spacing: 0.8px; white-space: nowrap;
-            text-transform: uppercase;
+        .tpm-notif:hover { transform: translateY(-3px) !important; box-shadow: 0 22px 55px rgba(4,75,80,0.26) !important; }
+        /* Pointer connecting the card down toward the chat FAB */
+        .tpm-notif::after {
+            content: '' !important; position: absolute !important; bottom: -7px !important; left: 34px !important;
+            width: 14px !important; height: 14px !important; background: var(--white) !important;
+            transform: rotate(45deg) !important; border-radius: 3px !important;
+            box-shadow: 4px 4px 8px rgba(4,75,80,0.06) !important;
         }
-        .tpm-notif p { font-size: 13px; color: var(--dark); line-height: 1.4; font-weight: 500; }
+        .tpm-notif-avatar {
+            width: 42px !important; height: 42px !important; border-radius: 50% !important; flex-shrink: 0 !important;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light)) !important;
+            display: flex !important; align-items: center !important; justify-content: center !important;
+            overflow: hidden !important; color: #fff !important; font-weight: 800 !important; font-size: 13px !important;
+        }
+        .tpm-notif-avatar img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        .tpm-notif-text { flex: 1 !important; min-width: 0 !important; }
+        .tpm-notif-title { font-size: 13px !important; font-weight: 700 !important; color: var(--dark) !important; line-height: 1.35 !important; }
+        .tpm-notif-sub { font-size: 11px !important; color: var(--gray) !important; margin-top: 2px !important; font-weight: 500 !important; }
+        .tpm-notif-dot {
+            width: 10px !important; height: 10px !important; border-radius: 50% !important; background: #2ecc71 !important;
+            flex-shrink: 0 !important; box-shadow: 0 0 0 4px rgba(46,204,113,0.15) !important;
+            animation: tpmPulse 2s infinite !important;
+        }
 
         /* ── OVERLAY ────────────────────────────────────────────────────────── */
         .tpm-overlay {
@@ -183,7 +205,42 @@
             border: 1px solid rgba(4,75,80,0.05) !important;
             max-height: 80dvh !important;
         }
-        .tpm-chat.tpm-minimized { width: 72px !important; height: 72px !important; border-radius: 50% !important; }
+
+        /* ── Minimized state: real FAB icon button, not a squashed header ────── */
+        .tpm-chat.tpm-minimized {
+            width: 64px !important; height: 64px !important; border-radius: 50% !important;
+            background: linear-gradient(135deg, var(--teal), var(--teal-light)) !important;
+            box-shadow: 0 12px 32px rgba(4,75,80,0.38), 0 3px 10px rgba(0,0,0,0.12) !important;
+            border: none !important; cursor: pointer !important;
+        }
+        .tpm-chat.tpm-minimized:hover { transform: translateY(-4px) scale(1.06) !important; box-shadow: 0 18px 42px rgba(4,75,80,0.45) !important; }
+        /* Soft attention ring pulse to draw the eye, matches primary accent */
+        .tpm-chat.tpm-minimized::before {
+            content: '' !important; position: absolute !important; inset: -6px !important; border-radius: 50% !important;
+            border: 2px solid rgba(217,122,92,0.55) !important; pointer-events: none !important;
+            animation: tpmRing 2.4s ease-out infinite !important;
+        }
+        .tpm-chat.tpm-minimized .tpm-chat-header {
+            background: transparent !important; padding: 0 !important; width: 100% !important; height: 100% !important;
+            justify-content: center !important; cursor: pointer !important;
+        }
+        .tpm-chat.tpm-minimized .tpm-chat-info,
+        .tpm-chat.tpm-minimized .tpm-chat-close { display: none !important; }
+        .tpm-chat.tpm-minimized .tpm-avatar {
+            width: 64px !important; height: 64px !important; background: transparent !important;
+        }
+        .tpm-chat.tpm-minimized .tpm-avatar-text { display: none !important; }
+        .tpm-chat.tpm-minimized .tpm-fab-icon { display: flex !important; }
+        .tpm-chat.tpm-minimized .tpm-online-dot { bottom: 2px !important; right: 2px !important; }
+        /* Unread badge — appears alongside the notification, clears when opened */
+        .tpm-fab-badge {
+            display: none !important; position: absolute !important; top: -4px !important; right: -4px !important;
+            width: 22px !important; height: 22px !important; border-radius: 50% !important;
+            background: var(--primary) !important; color: #fff !important; font-size: 11px !important;
+            font-weight: 800 !important; align-items: center !important; justify-content: center !important;
+            border: 2.5px solid #fff !important; box-shadow: 0 3px 8px rgba(217,122,92,0.5) !important;
+        }
+        .tpm-chat.tpm-minimized.tpm-has-badge .tpm-fab-badge { display: flex !important; }
 
         .tpm-chat-header {
             background: linear-gradient(135deg, var(--teal), var(--teal-light)) !important;
@@ -199,6 +256,9 @@
             transition: 0.3s;
         }
         .tpm-avatar-text { font-size: 14px; font-weight: 800; color: #fff; }
+        .tpm-fab-icon {
+            display: none !important; width: 26px !important; height: 26px !important; color: #fff !important;
+        }
         .tpm-online-dot {
             position: absolute !important; bottom: 2px !important; right: 2px !important;
             width: 12px !important; height: 12px !important; background: #2ecc71 !important;
@@ -269,7 +329,7 @@
         .tpm-choices button:hover { border-color: var(--primary); color: var(--primary); transform: translateX(8px); background: #fdf9f7; }
 
         /* ── ANIMATIONS ───────────────────────────────────────────────────────── */
-        @keyframes tpmSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes tpmSlideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes tpmFadeIn  { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tpmFadeUp  { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes tpmPopIn   {
@@ -278,10 +338,10 @@
         }
         @keyframes tpmPulse   { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.8); opacity: 0.6; } }
         @keyframes tpmSpin    { to { transform: rotate(360deg); } }
+        @keyframes tpmRing    { 0% { transform: scale(0.85); opacity: 0.85; } 100% { transform: scale(1.35); opacity: 0; } }
 
         /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
-            .tpm-notif { bottom: 20px !important; right: 20px !important; left: 20px !important; max-width: none !important; }
             .tpm-overlay { padding: 14px !important; align-items: center !important; }
             .tpm-modal { padding: 30px 22px !important; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)) !important; border-radius: 24px !important; max-height: 94dvh !important; }
             .tpm-modal-head { margin-bottom: 22px !important; }
@@ -292,8 +352,15 @@
             .tpm-quiz { padding: 32px 22px !important; padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)) !important; border-radius: 26px !important; }
             .tpm-quiz-icon { font-size: 38px !important; margin-bottom: 12px !important; }
             .tpm-chat { width: calc(100% - 32px) !important; left: 16px !important; right: 16px !important; bottom: 16px !important; }
-            .tpm-chat.tpm-minimized { width: 62px !important; height: 62px !important; left: auto !important; right: 16px !important; bottom: 16px !important; }
+            .tpm-chat.tpm-minimized { width: 60px !important; height: 60px !important; left: 16px !important; right: auto !important; bottom: 16px !important; }
+            .tpm-chat.tpm-minimized .tpm-avatar { width: 60px !important; height: 60px !important; }
+            .tpm-chat.tpm-minimized .tpm-fab-icon { width: 22px !important; height: 22px !important; }
             .tpm-messages { height: min(280px, 40dvh) !important; padding: 16px !important; }
+            .tpm-notif { left: 16px !important; bottom: 92px !important; max-width: 250px !important; padding: 12px 14px 12px 12px !important; gap: 10px !important; }
+            .tpm-notif::after { left: 26px !important; }
+            .tpm-notif-avatar { width: 36px !important; height: 36px !important; }
+            .tpm-notif-title { font-size: 12px !important; }
+            .tpm-notif-sub { font-size: 10px !important; }
         }
 
         /* Short-viewport (landscape phones, keyboard open) */
@@ -317,10 +384,20 @@
     container.id = 'tpm-system-v2';
     container.innerHTML = `
 
-    <!-- NOTIFICATION -->
-    <div id="tpm-notif" class="tpm-notif tpm-off" style="display:none;">
-        <div class="tpm-live-badge">Live</div>
-        <p>A new Discovery Session was just claimed. 🧠</p>
+    <!-- NOTIFICATION (linked card, stacked above the chat FAB) -->
+    <div id="tpm-notif" class="tpm-notif tpm-off" style="display:none;" onclick="tpmToggleChat()">
+        <div class="tpm-notif-avatar">
+            <img
+                src="https://static.wixstatic.com/media/ba043e_bf38d7d4c0624838b6d8b1f5c6e8e6e6~mv2.png"
+                alt=""
+                onerror="this.style.display='none'; this.parentElement.textContent='TPM';"
+            >
+        </div>
+        <div class="tpm-notif-text">
+            <div class="tpm-notif-title">🌿 New session booked just now</div>
+            <div class="tpm-notif-sub">The Placid Minds</div>
+        </div>
+        <span class="tpm-notif-dot"></span>
     </div>
 
     <!-- MAIN MODAL OVERLAY -->
@@ -376,6 +453,9 @@
             <div class="tpm-chat-agent" style="display:flex; align-items:center;">
                 <div class="tpm-avatar">
                    <span class="tpm-avatar-text">TPM</span>
+                   <svg class="tpm-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                   </svg>
                    <span class="tpm-online-dot"></span>
                 </div>
                 <div class="tpm-chat-info" style="margin-left:12px;">
@@ -396,6 +476,7 @@
                 </svg>
             </button>
         </div>
+        <span class="tpm-fab-badge">1</span>
     </div>
 
     <!-- EXIT INTENT REDESIGNED -->
@@ -474,12 +555,16 @@
     document.addEventListener('DOMContentLoaded', function () {
         if (hasConverted()) return; // don't bother returning leads with any popups
 
-        // Notification trigger
+        // Notification trigger — also lights up the unread badge on the FAB
         setTimeout(function () {
             var notif = document.getElementById('tpm-notif');
+            var chat = document.getElementById('tpm-chat');
             if (notif) {
                 notif.style.display = 'flex';
                 notif.classList.remove('tpm-off');
+                if (chat && chat.classList.contains('tpm-minimized')) {
+                    chat.classList.add('tpm-has-badge');
+                }
                 setTimeout(function () {
                     notif.classList.add('tpm-off');
                     setTimeout(function () { notif.style.display = 'none'; }, 600);
@@ -591,6 +676,15 @@
         var chat = document.getElementById('tpm-chat');
         if (chat.classList.contains('tpm-minimized')) {
             chat.classList.remove('tpm-minimized');
+            chat.classList.remove('tpm-has-badge'); // clear unread badge once opened
+
+            // Also dismiss the notification card right away if it's still showing
+            var notif = document.getElementById('tpm-notif');
+            if (notif && !notif.classList.contains('tpm-off')) {
+                notif.classList.add('tpm-off');
+                setTimeout(function () { notif.style.display = 'none'; }, 400);
+            }
+
             if (tpmState.step === 0) {
                 setTimeout(() => {
                     tpmBotMsg("Hi there! 🌿 I'm the Placid Minds assistant.");
