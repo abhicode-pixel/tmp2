@@ -1,7 +1,15 @@
-// THE PLACID MINDS - LEAD FUNNEL v2.0
+// THE PLACID MINDS - LEAD FUNNEL v2.1
 // Brand-Aligned | Terracotta + Teal | Montserrat Font
 // Premium Design | Simplified Form | 10-Digit Validation
 // Therapist: Dhivyaraksha Pajni | Advanced Cognitive Hypnotic Psychotherapist
+// v2.1 CHANGELOG:
+//   - Fixed mobile modal/chat height being squeezed (dvh units + true scroll-lock w/ position restore)
+//   - Fixed page-jump-to-top bug on modal open/close (body position:fixed now preserves scrollY)
+//   - Mobile exit-intent now triggers on back-gesture / tab-blur / idle-scroll-up (mouseleave never fires on touch)
+//   - Added "converted" cookie so users who already submitted aren't re-prompted
+//   - Added button loading spinner + hardened double-submit guard
+//   - Reduced modal/chat padding & element sizes at small viewport + short-viewport (landscape/keyboard) breakpoints
+//   - iOS safe-area padding for notch devices
 
 (function () {
     // ─── INJECT STYLES FIRST (prevent FOUC) ───────────────────────────────────
@@ -27,7 +35,12 @@
 
         #tpm-system-v2 * { box-sizing: border-box !important; margin: 0; padding: 0; }
 
-        body.tpm-no-scroll { overflow: hidden !important; position: fixed !important; width: 100% !important; }
+        /* True scroll-lock: preserves scroll position instead of snapping to top */
+        body.tpm-no-scroll {
+            position: fixed !important;
+            width: 100% !important;
+            overflow: hidden !important;
+        }
 
         /* ── NOTIFICATION ───────────────────────────────────────────────────── */
         .tpm-notif {
@@ -52,7 +65,10 @@
             -webkit-backdrop-filter: blur(12px) !important;
             z-index: 1000000 !important; display: flex !important;
             align-items: center !important; justify-content: center !important;
-            animation: tpmFadeIn 0.4s ease !important; overflow-y: auto !important; padding: 20px !important;
+            animation: tpmFadeIn 0.4s ease !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding: 20px !important;
         }
 
         /* ── PREMIUM MODAL ──────────────────────────────────────────────────── */
@@ -62,12 +78,19 @@
             box-shadow: 0 40px 100px rgba(4, 75, 80, 0.2) !important;
             border: 1px solid rgba(255, 255, 255, 0.4) !important;
             animation: tpmPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+            max-height: 92dvh !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            margin: auto !important;
+            padding-bottom: calc(45px + env(safe-area-inset-bottom, 0px)) !important;
         }
 
         .tpm-close-btn {
-            position: absolute !important; top: 18px !important; right: 18px !important;
+            position: sticky !important; top: 0 !important; right: 0 !important;
+            float: right !important;
+            margin-top: -18px !important; margin-right: -18px !important; margin-bottom: -12px !important;
             width: 38px !important; height: 38px !important; border-radius: 50% !important;
-            background: rgba(4, 75, 80, 0.05) !important; border: none !important; cursor: pointer !important;
+            background: rgba(4, 75, 80, 0.06) !important; border: none !important; cursor: pointer !important;
             color: var(--teal) !important; font-size: 24px !important; z-index: 10 !important;
             display: flex !important; align-items: center !important; justify-content: center !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; line-height: 1 !important;
@@ -75,7 +98,7 @@
         .tpm-close-btn:hover { background: var(--primary) !important; color: #fff !important; transform: rotate(90deg) scale(1.1) !important; }
 
         /* Modal Header */
-        .tpm-modal-head { text-align: center; margin-bottom: 30px; }
+        .tpm-modal-head { text-align: center; margin-bottom: 30px; clear: both; }
         .tpm-modal-logo {
             display: block; margin: 0 auto 16px; max-height: 55px; width: auto;
             object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
@@ -89,6 +112,10 @@
             letter-spacing: -0.5px;
         }
         .tpm-modal-head p { color: var(--gray); font-size: 14px; line-height: 1.6; font-weight: 400; }
+        .tpm-trust-row {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            margin-top: 10px; font-size: 12px; color: var(--primary-dark); font-weight: 700;
+        }
 
         /* Form Fields */
         .tpm-form-stack { display: flex !important; flex-direction: column !important; gap: 20px !important; }
@@ -128,9 +155,17 @@
             cursor: pointer !important; margin-top: 10px !important; letter-spacing: 0.5px !important;
             box-shadow: 0 12px 30px rgba(217,122,92,0.4) !important; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
             text-transform: uppercase;
+            display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important;
         }
-        .tpm-submit:hover { transform: translateY(-4px) scale(1.02) !important; box-shadow: 0 20px 45px rgba(217,122,92,0.5) !important; }
-        .tpm-submit:active { transform: translateY(-1px) !important; }
+        .tpm-submit:hover:not(:disabled) { transform: translateY(-4px) scale(1.02) !important; box-shadow: 0 20px 45px rgba(217,122,92,0.5) !important; }
+        .tpm-submit:active:not(:disabled) { transform: translateY(-1px) !important; }
+        .tpm-submit:disabled { opacity: 0.85 !important; cursor: not-allowed !important; }
+
+        .tpm-spinner {
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 2.5px solid rgba(255,255,255,0.4); border-top-color: #fff;
+            animation: tpmSpin 0.7s linear infinite; display: inline-block;
+        }
 
         .tpm-privacy {
             text-align: center; font-size: 12px; color: var(--gray); margin-top: 20px;
@@ -146,14 +181,16 @@
             overflow: hidden !important; display: flex !important; flex-direction: column !important;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
             border: 1px solid rgba(4,75,80,0.05) !important;
+            max-height: 80dvh !important;
         }
         .tpm-chat.tpm-minimized { width: 72px !important; height: 72px !important; border-radius: 50% !important; }
-        
+
         .tpm-chat-header {
             background: linear-gradient(135deg, var(--teal), var(--teal-light)) !important;
             padding: 18px 22px !important; color: #fff !important;
             display: flex !important; justify-content: space-between !important;
             align-items: center !important; cursor: pointer !important;
+            flex-shrink: 0 !important;
         }
         .tpm-avatar {
             position: relative !important; width: 46px !important; height: 46px !important;
@@ -170,7 +207,8 @@
         }
 
         .tpm-messages {
-            height: 320px !important; padding: 22px !important; overflow-y: auto !important;
+            height: min(320px, 45dvh) !important; padding: 22px !important; overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
             background: #fdfdfd !important; display: flex !important; flex-direction: column !important;
             gap: 12px !important; scroll-behavior: smooth;
         }
@@ -181,10 +219,20 @@
         }
         .tpm-bot { background: #f1f5f9 !important; border-bottom-left-radius: 4px !important; color: var(--dark) !important; }
         .tpm-user { background: var(--primary) !important; color: #fff !important; align-self: flex-end !important; border-bottom-right-radius: 4px !important; }
+        .tpm-option {
+            display: inline-block !important; margin: 8px 6px 0 0 !important;
+            background: #fff !important; border: 1.5px solid var(--border) !important;
+            color: var(--teal) !important; padding: 8px 14px !important; border-radius: 20px !important;
+            font-size: 12px !important; font-weight: 700 !important; cursor: pointer !important;
+            transition: all 0.25s ease !important;
+        }
+        .tpm-option:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
         .tpm-chat-footer {
             padding: 18px 20px !important; background: #fff !important;
             border-top: 1px solid #f1f5f9 !important; display: flex !important; gap: 12px !important;
+            flex-shrink: 0 !important;
+            padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
         }
 
         /* ── EXIT INTENT REDESIGN (THE GIFT CARD) ─────────────────────────── */
@@ -193,7 +241,11 @@
             width: 95% !important; max-width: 440px !important; border-radius: 35px !important;
             padding: 50px 40px !important; text-align: center !important; position: relative !important;
             box-shadow: 0 50px 120px rgba(4, 75, 80, 0.3) !important;
-            overflow: hidden;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            max-height: 92dvh !important;
+            margin: auto !important;
+            padding-bottom: calc(50px + env(safe-area-inset-bottom, 0px)) !important;
         }
         .tpm-quiz::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 8px;
@@ -220,18 +272,40 @@
         @keyframes tpmSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes tpmFadeIn  { from { opacity: 0; } to { opacity: 1; } }
         @keyframes tpmFadeUp  { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes tpmPopIn   { 
+        @keyframes tpmPopIn   {
             0% { transform: scale(0.85); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
         @keyframes tpmPulse   { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.8); opacity: 0.6; } }
+        @keyframes tpmSpin    { to { transform: rotate(360deg); } }
 
         /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
             .tpm-notif { bottom: 20px !important; right: 20px !important; left: 20px !important; max-width: none !important; }
-            .tpm-modal { padding: 35px 25px !important; }
-            .tpm-chat { width: calc(100% - 40px) !important; left: 20px !important; right: 20px !important; }
-            .tpm-chat.tpm-minimized { width: 64px !important; height: 64px !important; left: auto !important; right: 20px !important; }
+            .tpm-overlay { padding: 14px !important; align-items: center !important; }
+            .tpm-modal { padding: 30px 22px !important; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)) !important; border-radius: 24px !important; max-height: 94dvh !important; }
+            .tpm-modal-head { margin-bottom: 22px !important; }
+            .tpm-modal-logo { max-height: 42px !important; margin-bottom: 12px !important; }
+            .tpm-modal-head h2 { font-size: 20px !important; }
+            .tpm-form-stack { gap: 16px !important; }
+            .tpm-field textarea { height: 76px !important; }
+            .tpm-quiz { padding: 32px 22px !important; padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)) !important; border-radius: 26px !important; }
+            .tpm-quiz-icon { font-size: 38px !important; margin-bottom: 12px !important; }
+            .tpm-chat { width: calc(100% - 32px) !important; left: 16px !important; right: 16px !important; bottom: 16px !important; }
+            .tpm-chat.tpm-minimized { width: 62px !important; height: 62px !important; left: auto !important; right: 16px !important; bottom: 16px !important; }
+            .tpm-messages { height: min(280px, 40dvh) !important; padding: 16px !important; }
+        }
+
+        /* Short-viewport (landscape phones, keyboard open) */
+        @media (max-height: 700px) {
+            .tpm-modal { padding-top: 22px !important; }
+            .tpm-modal-logo { max-height: 34px !important; margin-bottom: 8px !important; }
+            .tpm-modal-head { margin-bottom: 14px !important; }
+            .tpm-modal-head p { display: none !important; }
+            .tpm-field textarea { height: 56px !important; }
+            .tpm-form-stack { gap: 12px !important; }
+            .tpm-quiz-icon { font-size: 30px !important; margin-bottom: 8px !important; }
+            .tpm-messages { height: min(220px, 34dvh) !important; }
         }
 
         .tpm-off { display: none !important; opacity: 0 !important; visibility: hidden !important; }
@@ -264,21 +338,22 @@
                 <span class="tpm-modal-logo-fallback" style="display:none;">The Placid Minds</span>
                 <h2>Begin Your Journey</h2>
                 <p>Private session with Dhivyaraksha Pajni — Cognitive Hypnotic Psychotherapist</p>
+                <div class="tpm-trust-row">⭐⭐⭐⭐⭐ <span>Trusted by 500+ clients</span></div>
             </div>
 
             <form id="tpm-form" onsubmit="tpmSubmit(event)">
                 <input type="hidden" name="access_key" value="1ab94b2f-08e0-47a6-8aec-c91a0b8d48ea">
                 <input type="hidden" name="subject" value="New Inquiry – The Placid Minds">
-                
+
                 <div class="tpm-form-stack">
                     <div class="tpm-field">
                         <label>FULL NAME</label>
                         <input type="text" name="name" required placeholder="How should we address you?">
                     </div>
-                    
+
                     <div class="tpm-field">
                         <label>WHATSAPP NUMBER (10 DIGITS)</label>
-                        <input type="tel" name="phone" required placeholder="e.g. 981889XXXX" pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number">
+                        <input type="tel" name="phone" required placeholder="e.g. 981889XXXX" pattern="[0-9]{10}" inputmode="numeric" maxlength="10" title="Please enter a valid 10-digit mobile number">
                         <span class="tpm-error-hint">Exactly 10 digits required</span>
                     </div>
 
@@ -287,7 +362,7 @@
                         <textarea name="message" required placeholder="Briefly describe what's on your mind..."></textarea>
                     </div>
 
-                    <button type="submit" class="tpm-submit">Confirm Discovery Session</button>
+                    <button type="submit" class="tpm-submit"><span class="tpm-submit-label">Confirm Discovery Session</span></button>
                 </div>
                 <div id="tpm-form-msg"></div>
             </form>
@@ -298,7 +373,7 @@
     <!-- CHAT WIDGET -->
     <div id="tpm-chat" class="tpm-chat tpm-minimized">
         <div class="tpm-chat-header" onclick="tpmToggleChat()">
-            <div class="tpm-chat-agent">
+            <div class="tpm-chat-agent" style="display:flex; align-items:center;">
                 <div class="tpm-avatar">
                    <span class="tpm-avatar-text">TPM</span>
                    <span class="tpm-online-dot"></span>
@@ -312,10 +387,10 @@
         </div>
         <div id="tpm-messages" class="tpm-messages"></div>
         <div class="tpm-chat-footer">
-            <input type="text" id="tpm-input" placeholder="Type a message..." disabled 
+            <input type="text" id="tpm-input" placeholder="Type a message..." disabled
                    style="flex:1; border:1.5px solid #f1f5f9; padding:12px 18px; border-radius:15px; outline:none; font-family:inherit;">
-            <button id="tpm-send" onclick="tpmSend()" disabled 
-                    style="width:48px; height:48px; background:var(--primary); border:none; border-radius:12px; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            <button id="tpm-send" onclick="tpmSend()" disabled
+                    style="width:48px; height:48px; background:var(--primary); border:none; border-radius:12px; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
@@ -328,7 +403,7 @@
         <div class="tpm-quiz">
             <button class="tpm-close-btn" onclick="tpmCloseExit()">&times;</button>
             <div class="tpm-quiz-badge">Personalized Support</div>
-            
+
             <div id="tpm-exit-step1">
                 <div class="tpm-quiz-icon">🌿</div>
                 <h3>Let's find the right path.</h3>
@@ -349,15 +424,16 @@
                 <form onsubmit="tpmExitSubmit(event)">
                     <input type="hidden" name="access_key" value="1ab94b2f-08e0-47a6-8aec-c91a0b8d48ea">
                     <input type="hidden" id="tpm-exit-topic-hidden" name="message" value="">
-                    
+
                     <div style="text-align:left; margin-bottom:15px;">
                         <label style="font-size:10px; font-weight:700; color:var(--teal); text-transform:uppercase; display:block; margin-bottom:6px;">Your WhatsApp (10 Digits)</label>
-                        <input type="tel" id="tpm-exit-phone" required placeholder="Enter 10-digit mobile" 
-                               pattern="[0-9]{10}" style="width:100%; padding:14px; border:1.5px solid var(--border); border-radius:14px; outline:none;"
+                        <input type="tel" id="tpm-exit-phone" name="phone" required placeholder="Enter 10-digit mobile"
+                               pattern="[0-9]{10}" inputmode="numeric" maxlength="10"
+                               style="width:100%; padding:14px; border:1.5px solid var(--border); border-radius:14px; outline:none;"
                                oninput="this.setCustomValidity('')" oninvalid="this.setCustomValidity('Please enter exactly 10 digits')">
                     </div>
-                    
-                    <button type="submit" class="tpm-submit">Connect via WhatsApp</button>
+
+                    <button type="submit" class="tpm-submit"><span class="tpm-submit-label">Connect via WhatsApp</span></button>
                     <div id="tpm-exit-msg"></div>
                 </form>
             </div>
@@ -367,21 +443,37 @@
     document.body.appendChild(container);
 
     // ─── LOGIC & STATE ──────────────────────────────────────────────────────────
-    var tpmState = { phase: 0, step: 0, data: {} };
-    var TPM_COOKIE = 'tpm_v2_status';
+    var tpmState = { phase: 0, step: 0, data: {}, scrollY: 0 };
+    var TPM_SEEN_COOKIE = 'tpm_v2_status';
+    var TPM_CONVERTED_COOKIE = 'tpm_v2_converted';
 
-    function setCookie(n, v) {
+    function setCookie(n, v, hours) {
         var d = new Date();
-        d.setTime(d.getTime() + (72 * 60 * 60 * 1000)); // 3 days
+        d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
         document.cookie = n + '=' + v + ';expires=' + d.toUTCString() + ';path=/';
     }
     function getCookie(n) {
         var m = document.cookie.match(new RegExp('(^| )' + n + '=([^;]+)'));
         return m ? m[2] : null;
     }
+    function hasConverted() { return !!getCookie(TPM_CONVERTED_COOKIE); }
+
+    // ─── SCROLL LOCK (fixes mobile "shrinking viewport" bug) ───────────────────
+    function tpmLockScroll() {
+        tpmState.scrollY = window.scrollY || window.pageYOffset || 0;
+        document.body.style.top = (-tpmState.scrollY) + 'px';
+        document.body.classList.add('tpm-no-scroll');
+    }
+    function tpmUnlockScroll() {
+        document.body.classList.remove('tpm-no-scroll');
+        document.body.style.top = '';
+        window.scrollTo(0, tpmState.scrollY || 0);
+    }
 
     // ─── INITIALIZATION ─────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
+        if (hasConverted()) return; // don't bother returning leads with any popups
+
         // Notification trigger
         setTimeout(function () {
             var notif = document.getElementById('tpm-notif');
@@ -396,8 +488,32 @@
         }, 3000);
 
         // Scroll trigger (30%)
-        if (!getCookie(TPM_COOKIE)) {
-            window.addEventListener('scroll', tpmScrollTrigger);
+        if (!getCookie(TPM_SEEN_COOKIE)) {
+            window.addEventListener('scroll', tpmScrollTrigger, { passive: true });
+        }
+
+        // Mobile-friendly exit intent (mouseleave doesn't fire on touch devices)
+        var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (isTouch) {
+            // 1) Fires when user backgrounds the tab / switches apps
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'hidden') tpmMaybeShowExit();
+            });
+            // 2) Fires on a fast upward scroll flick near the top (common "leaving" gesture on mobile)
+            var lastY = window.scrollY, lastT = Date.now();
+            window.addEventListener('scroll', function () {
+                var y = window.scrollY, t = Date.now();
+                var dt = t - lastT;
+                if (dt > 0) {
+                    var v = (lastY - y) / dt; // px/ms, positive = scrolling up
+                    if (v > 1.2 && y < 400) tpmMaybeShowExit();
+                }
+                lastY = y; lastT = t;
+            }, { passive: true });
+        } else {
+            document.addEventListener('mouseleave', function (e) {
+                if (e.clientY < 0) tpmMaybeShowExit();
+            });
         }
     });
 
@@ -413,8 +529,8 @@
             var ov = document.getElementById('tpm-overlay');
             ov.style.display = 'flex';
             ov.classList.remove('tpm-off');
-            document.body.classList.add('tpm-no-scroll');
-            setCookie(TPM_COOKIE, 'seen');
+            tpmLockScroll();
+            setCookie(TPM_SEEN_COOKIE, 'seen', 72);
         }
     }
 
@@ -423,7 +539,7 @@
         var ov = document.getElementById('tpm-overlay');
         ov.classList.add('tpm-off');
         setTimeout(function () { ov.style.display = 'none'; }, 400);
-        document.body.classList.remove('tpm-no-scroll');
+        tpmUnlockScroll();
         if (tpmState.phase === 1) {
             tpmState.phase = 2;
             setTimeout(tpmToggleChat, 4000);
@@ -433,17 +549,19 @@
     window.tpmSubmit = function (e) {
         e.preventDefault();
         var btn = e.target.querySelector('button[type="submit"]');
+        if (btn.disabled) return; // hard guard against double submit
+        var label = btn.querySelector('.tpm-submit-label');
         var msg = document.getElementById('tpm-form-msg');
-        
+
         // Final length check for phone
         var phone = e.target.phone.value;
-        if (phone.length !== 10) {
+        if (!/^[0-9]{10}$/.test(phone)) {
             alert("Please enter exactly 10 digits for the WhatsApp number.");
             return;
         }
 
-        btn.innerText = 'Connecting...';
         btn.disabled = true;
+        label.innerHTML = '<span class="tpm-spinner"></span> Connecting...';
 
         fetch('https://api.web3forms.com/submit', {
             method: 'POST',
@@ -453,16 +571,17 @@
         .then(res => {
             if (res.success) {
                 msg.innerHTML = '<div style="color:#10b981; margin-top:15px; font-weight:700; font-size:14px; text-align:center;">✨ Confirmed! Dhivyaraksha will connect with you shortly.</div>';
+                setCookie(TPM_CONVERTED_COOKIE, '1', 24 * 90);
                 setTimeout(tpmClose, 3000);
             } else {
                 msg.innerHTML = '<div style="color:#ef4444; margin-top:10px; font-size:13px; text-align:center;">Submission error. Please try again.</div>';
-                btn.innerText = 'Confirm Discovery Session';
+                label.innerText = 'Confirm Discovery Session';
                 btn.disabled = false;
             }
         })
         .catch(() => {
             msg.innerHTML = '<div style="color:#ef4444; margin-top:10px; font-size:13px; text-align:center;">Network issue. Check connection.</div>';
-            btn.innerText = 'Confirm';
+            label.innerText = 'Confirm Discovery Session';
             btn.disabled = false;
         });
     };
@@ -477,8 +596,8 @@
                     tpmBotMsg("Hi there! 🌿 I'm the Placid Minds assistant.");
                     setTimeout(() => {
                         tpmBotMsg("Would you like to start a professional mindset transformation today?"
-                            + '<button class="tpm-option" onclick="tpmChatStart(\'Mindset Overhaul\')">🚀 Yes, let\'s start</button>'
-                            + '<button class="tpm-option" onclick="tpmChatStart(\'Learn More\')">💡 Tell me more first</button>'
+                            + '<div><button class="tpm-option" onclick="tpmChatStart(\'Mindset Overhaul\')">🚀 Yes, let\'s start</button>'
+                            + '<button class="tpm-option" onclick="tpmChatStart(\'Learn More\')">💡 Tell me more first</button></div>'
                         );
                     }, 1000);
                 }, 500);
@@ -539,8 +658,11 @@
                 return;
             }
             tpmState.data.phone = val;
+            tpmState.step = 3; // lock further sends until this round-trip resolves
+            document.getElementById('tpm-send').disabled = true;
+            document.getElementById('tpm-input').disabled = true;
             tpmBotMsg("Processing... ⏳");
-            
+
             var fd = new FormData();
             fd.append('access_key', '1ab94b2f-08e0-47a6-8aec-c91a0b8d48ea');
             fd.append('name', tpmState.data.name);
@@ -551,22 +673,28 @@
             fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd })
                 .then(() => {
                     tpmBotMsg("✅ Successfully connected! Dhivyaraksha will reach out on WhatsApp shortly. Have a peaceful day 🌿");
+                    setCookie(TPM_CONVERTED_COOKIE, '1', 24 * 90);
                     setTimeout(tpmCloseChat, 6000);
+                })
+                .catch(() => {
+                    tpmBotMsg("⚠️ Something went wrong sending that. Please try again in a moment.");
+                    tpmState.step = 2;
+                    document.getElementById('tpm-send').disabled = false;
+                    document.getElementById('tpm-input').disabled = false;
                 });
         }
     };
 
     // ─── EXIT INTENT CONTROLS ───────────────────────────────────────────────────
     var exitShown = false;
-    document.addEventListener('mouseleave', function (e) {
-        if (e.clientY < 0 && !exitShown && tpmState.phase > 0) {
-            exitShown = true;
-            var ex = document.getElementById('tpm-exit');
-            ex.style.display = 'flex';
-            ex.classList.remove('tpm-off');
-            document.body.classList.add('tpm-no-scroll');
-        }
-    });
+    function tpmMaybeShowExit() {
+        if (exitShown || tpmState.phase === 0 || hasConverted()) return;
+        exitShown = true;
+        var ex = document.getElementById('tpm-exit');
+        ex.style.display = 'flex';
+        ex.classList.remove('tpm-off');
+        tpmLockScroll();
+    }
 
     window.tpmExitNext = function (topic) {
         document.getElementById('tpm-exit-topic-hidden').value = "Exit Lead Interest: " + topic;
@@ -578,21 +706,23 @@
         var ex = document.getElementById('tpm-exit');
         ex.classList.add('tpm-off');
         setTimeout(function () { ex.style.display = 'none'; }, 400);
-        document.body.classList.remove('tpm-no-scroll');
+        tpmUnlockScroll();
     };
 
     window.tpmExitSubmit = function (e) {
         e.preventDefault();
+        var btn = e.target.querySelector('button[type="submit"]');
+        if (btn.disabled) return;
+        var label = btn.querySelector('.tpm-submit-label');
         var phone = document.getElementById('tpm-exit-phone').value;
-        if (phone.length !== 10) {
+        if (!/^[0-9]{10}$/.test(phone)) {
             alert("Exactly 10 digits required.");
             return;
         }
 
-        var btn = e.target.querySelector('button');
         var msg = document.getElementById('tpm-exit-msg');
-        btn.innerText = 'Connecting...';
         btn.disabled = true;
+        label.innerHTML = '<span class="tpm-spinner"></span> Connecting...';
 
         fetch('https://api.web3forms.com/submit', {
             method: 'POST',
@@ -600,7 +730,13 @@
         })
         .then(() => {
             msg.innerHTML = '<div style="color:#10b981; margin-top:20px; font-weight:700;">✅ Success! Talk to you soon.</div>';
+            setCookie(TPM_CONVERTED_COOKIE, '1', 24 * 90);
             setTimeout(tpmCloseExit, 3000);
+        })
+        .catch(() => {
+            msg.innerHTML = '<div style="color:#ef4444; margin-top:10px; font-size:13px;">Network issue. Please try again.</div>';
+            label.innerText = 'Connect via WhatsApp';
+            btn.disabled = false;
         });
     };
 
