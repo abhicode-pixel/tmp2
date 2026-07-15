@@ -1,7 +1,7 @@
 // THE PLACID MINDS - LEAD FUNNEL v2.2
 // Brand-Aligned | Terracotta + Teal | Montserrat Font
 // Premium Design | Simplified Form | 10-Digit Validation
-// Therapist: Dhivyaraksha Pajni | Advanced Cognitive Hypnotic Psychotherapist
+// Therapist: Dhivyaraksha Pajni | Advanced Cognitive Hypnotic Psychotherapist 
 // v2.2 CHANGELOG:
 //   - Redesigned minimized chat FAB: proper icon button (chat-bubble icon) w/ gradient,
 //     soft attention ring pulse, unread badge — no more squashed "TPM" text circle
