@@ -9,7 +9,7 @@
 //     with avatar, title/subtitle, live dot, and a connecting pointer — like a linked pair
 //   - Notification is now clickable and opens the chat widget directly
 //   - Unread badge appears with the notification and clears automatically once chat opens
-//   - Both chat + notification now consistently anchor bottom-left on desktop & mobile
+//   - Both chat + notification now consistently anchor bottom-left on desktop & mobile a
 //   - (carried over from v2.1) dvh-safe modal/chat sizing, true scroll-lock w/ position
 //     restore, mobile-safe exit intent, converted-cookie suppression, iOS safe-area padding
 
